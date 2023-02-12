@@ -1,0 +1,48 @@
+---
+ - hosts: ansibleclient1
+   vars:
+     var1: Hello guys!
+     var2:
+       - Africa
+       - Asia
+       - South America
+       - North America
+       - Europe
+     var3: [country=Africa, Asia, South America, North America, Europe]
+
+     users:
+      alice:
+        name: Alice Appleworth
+        telephone: 123-456-7890
+      bob:
+        name: Bob Bananarama
+        telephone: 987-654-3210
+   
+   tasks:
+   - name: Ansible Variable Basic Usage
+     debug:
+       msg: "I wish you {{ var1 }}"
+   
+   - name:  Ansible Variable Basic Usage 2
+     debug:
+       msg: "{{ var2 }}"
+
+   - name:  Ansible Variable Basic Usage 2
+     debug:
+       msg: "{{ item  }}"
+     with_items:
+      - I am in {{ var3 [0] }}
+
+   - name: Storing the output to a variable & printing it
+     shell: host myip.opendns.com resolver1.opendns.com | grep address |  awk '{print $4}'
+     register: shell_result
+   - debug:
+      msg: Public IP of VM is {{ shell_result.stdout }}
+
+   - debug:
+       var: shell_result
+
+   - name: Printing the dictionary
+     debug:
+       msg: "{{item.key}}:{{item.value}}"
+     loop: "{{ lookup('dict', users) }}"

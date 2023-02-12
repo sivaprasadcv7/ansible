@@ -1,0 +1,18 @@
+- hosts: ansibleclient1
+#  vars:
+#    variable_to_be_replaced: 'Hello world'
+#    inline_variable: 'hello again'
+  vars_files:
+       - name_vars.yaml
+  vars:
+      my_time: "12pm"
+      my_place: "Pune"
+      
+  tasks:
+    - name: Ansible Template Example
+      template:
+        src: hello_world.j2
+        dest: /tmp/hello_world.txt
+      register: shell_result
+    - debug:
+        var: shell_result

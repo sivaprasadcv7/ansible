@@ -1,0 +1,87 @@
+---
+- name: This sets up a Docker server
+  hosts: localhost
+  #remote_user: ec2-user
+  #become: true
+  #become_method: sudo
+  vars_files:
+       - docker_token.yml
+  vars:
+      vol: "/tmp/myefs/docker_volume/"
+      IMAGE: "radical-weekdays-nov-10am-2022"
+      ANSIBLE_WORKSPACE: /root/ansible
+      Jenkins_WORKSPACE: /var/lib/jenkins/workspace/dev-pipeline
+      DockerHub_repo: "aamirs/radical-private-repo"
+      tag: "nov-2022-0.0.1"
+
+  tasks:
+  - name: Installing Docker
+    yum:
+      name: docker
+      state: present
+
+  - name: Start Docker Service
+    service:
+      name: docker
+      state: started
+
+  - name: Enable Docker Service
+    service:
+      name: docker
+      enabled: yes
+
+  - name: Ansible copy file to remote server
+    copy:
+      src: "{{ Jenkins_WORKSPACE }}/webapp/target/webapp.war"
+      dest: "{{ ANSIBLE_WORKSPACE }}"
+    register: shell_result
+  - debug:
+      var: shell_result
+
+  - name: Ansible copy file to remote server
+    copy:
+      src: "{{ Jenkins_WORKSPACE }}/webapp/target/webapp"
+      dest: "{{ ANSIBLE_WORKSPACE }}"
+    register: shell_result
+  - debug:
+      var: shell_result
+
+  - name: Build Docker Image
+    args:
+      chdir: "{{ ANSIBLE_WORKSPACE }}"
+    shell: docker build -t {{ IMAGE }}:{{ tag }} . 
+    register: shell_result
+  - debug:
+      var: shell_result
+
+  - name: Checking Docker Image
+    shell: docker images
+    register: shell_result
+  - debug:
+      var: shell_result
+
+  - name: Installing pip
+    yum:
+      name: pip
+      state: present
+
+  - name: Installing docker-py
+    shell: pip install docker-py
+
+  - name: Log into DockerHub
+    docker_login:
+      username: aamirs
+      password: "{{ docker_pass }}"
+    register: shell_result
+  - debug:
+      var: shell_result
+      
+  - name: Pushing docker image to DockerHub Private Repository
+    command: "{{ item }}"
+    with_items:
+    - docker tag {{ IMAGE  }}:{{ tag }} {{ DockerHub_repo }}:{{ tag }}
+    - docker push {{ DockerHub_repo }}:{{ tag }}
+    register: shell_result
+  - debug:
+      var: shell_result
+
